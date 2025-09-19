@@ -116,7 +116,7 @@
 			console.log('Load result:', result); // Debug log
 
 			if (result.success) {
-		  		alert(result.data.message);
+		  		alert(result.message);
 			} else {
 		  		alert(`Error: ${result.message}`);
 			}
