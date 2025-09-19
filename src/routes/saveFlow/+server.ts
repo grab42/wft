@@ -1,22 +1,28 @@
+import { json } from "@sveltejs/kit";
+
 export async function POST(event) {
-    const data = await event.request.formData();
-    const nodesString = data.get('nodes')?.toString();
+	const data = await event.request.formData();
+	const nodesString = data.get('nodes')?.toString();
 	const edgesString = data.get('edges')?.toString();
 
 		if (!nodesString || !edgesString) {
-			return ({ message: 'Invalid flowchart data provided.' });
+			return json({ message: 'Invalid flowchart data provided.' }, { status: 400 });
 		}
 
 		const nodes = JSON.parse(nodesString);
 		const edges = JSON.parse(edgesString);
 
 		if (!nodes || !edges) {
-			return ({ message: 'Invalid flowchart data provided.' });
+			return json({ message: 'Invalid flowchart data provided.' }, { status: 400 });
 		}
 		const { dbConnection } = event.locals;
 
 		try {
 			await dbConnection.begin();
+
+			if (!event.locals.user || !event.locals.user.id) {
+			return json({ message: 'Please login to save the flowchart.' }, { status: 401 });
+		}
 
 			// 1. Create a new experiment
 			const expResult = await dbConnection.query(
@@ -74,10 +80,10 @@ export async function POST(event) {
 			}
 
 			await dbConnection.commit();
-			return ({ success: true, message: `Experiment saved with ID: ${experimentId}` });
+			return json({ success: true, message: `Experiment saved with ID: ${experimentId}` });
 		} catch (error) {
 			await dbConnection.rollback();
 			console.error('Failed to save flowchart:', error);
-			return ({ message: 'Could not save the flowchart to the database.' });
+			return json({ message: 'Could not save the flowchart to the database.' }, { status: 500 });
 		}
 }
